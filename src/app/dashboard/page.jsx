@@ -12,12 +12,16 @@ export default function Dashboard() {
   const supabase = createClient();
   const router = useRouter();
 
-  const getUser = async () => {
-    const { data, error } = await supabase.auth.getUser();
-    if (error || !data?.user) {
-      router.push("/auth/login");
-    }
-  };
+  useEffect(() => {
+    const getUser = async () => {
+      const { data, error } = await supabase.auth.getUser();
+      if (error || !data?.user) {
+        router.push("/auth/login");
+      }
+    };
+
+    getUser();
+  });
 
   const getProducts = async () => {
     const { data, error } = await supabase.from("products").select("*");
@@ -29,7 +33,9 @@ export default function Dashboard() {
   };
 
   const handleDelete = async (productId, productTitle) => {
-    const confirmDelete = confirm(`¿Estás seguro de que quieres eliminar el producto "${productTitle}"?`);
+    const confirmDelete = confirm(
+      `¿Estás seguro de que quieres eliminar el producto "${productTitle}"?`
+    );
     if (confirmDelete) {
       const { error } = await supabase
         .from("products")
@@ -39,14 +45,16 @@ export default function Dashboard() {
       if (error) {
         console.error("Error deleting product:", error.message);
       } else {
-        setProducts((prevProduct) => prevProduct.filter((product) => product.id !== productId));
+        setProducts((prevProduct) =>
+          prevProduct.filter((product) => product.id !== productId)
+        );
       }
     }
   };
 
   useEffect(() => {
     getProducts();
-  }); 
+  });
 
   return (
     <section className="bg-gradient-to-r from-slate-900 to-slate-700 text-white min-h-screen flex flex-col">
@@ -67,7 +75,9 @@ export default function Dashboard() {
             <thead>
               <tr>
                 <th className="py-2 px-4 border-b border-gray-700">Nombre</th>
-                <th className="py-2 px-4 border-b border-gray-700">Descripción</th>
+                <th className="py-2 px-4 border-b border-gray-700">
+                  Descripción
+                </th>
                 <th className="py-2 px-4 border-b border-gray-700">
                   Categoría
                 </th>
