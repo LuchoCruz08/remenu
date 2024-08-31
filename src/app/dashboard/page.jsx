@@ -14,6 +14,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 
 export default function Dashboard() {
   const [products, setProducts] = useState([]);
+  const [user, setUser] = useState(null);
   const supabase = createClient();
   const router = useRouter();
 
@@ -22,6 +23,8 @@ export default function Dashboard() {
       const { data, error } = await supabase.auth.getUser();
       if (error || !data?.user) {
         router.push("/auth/login");
+      } else {
+        setUser(data.user);
       }
     };
 
@@ -29,7 +32,13 @@ export default function Dashboard() {
   });
 
   const getProducts = async () => {
-    const { data, error } = await supabase.from("products").select("*");
+    if (!user) return;
+
+    const { data, error } = await supabase
+      .from("products")
+      .select("*")
+      .eq("user_id", user.id);
+
     if (error) {
       console.error("Error:", error.message);
     } else {
@@ -41,7 +50,8 @@ export default function Dashboard() {
     const { error } = await supabase
       .from("products")
       .delete()
-      .eq("id", productId);
+      .eq("id", productId)
+      .eq("user_id", user.id);
 
     if (error) {
       console.error("Error deleting product:", error.message);
@@ -53,8 +63,14 @@ export default function Dashboard() {
   };
 
   useEffect(() => {
-    getProducts();
+    if (user) {
+      getProducts();
+    }
   });
+
+  if (!user) {
+    return <div>Loading...</div>;
+  }
 
   return (
     <section className="bg-gradient-to-r from-slate-900 to-slate-700 text-white min-h-screen flex flex-col">
