@@ -1,153 +1,159 @@
-"use client";
+"use client"
 
-import { createClient } from "@/utils/supabase/client";
-import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
-import { LoaderCircle, Utensils } from "lucide-react";
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
+import { useEffect, useState } from "react"
+import { useRouter, useParams } from "next/navigation"
+import Link from "next/link"
+import { createClient } from "@/utils/supabase/client"
+import { Utensils, Edit2, Save, ArrowLeft, Loader2 } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { toast, ToastContainer } from 'react-toastify'
+import 'react-toastify/dist/ReactToastify.css'
 
 export default function View() {
-  const supabase = createClient();
-  const router = useRouter();
-  const { id } = useParams();
-  const [product, setProduct] = useState(null);
-  const [editingField, setEditingField] = useState(null);
-  const [updatedValue, setUpdatedValue] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+  const supabase = createClient()
+  const router = useRouter()
+  const { id } = useParams()
+  const [product, setProduct] = useState(null)
+  const [editingField, setEditingField] = useState(null)
+  const [updatedValue, setUpdatedValue] = useState("")
+  const [isLoading, setIsLoading] = useState(false)
 
   useEffect(() => {
     const fetchProduct = async () => {
-      if (!id) return;
+      if (!id) return
 
       const { data, error } = await supabase
         .from("products")
         .select("*")
         .eq("id", id)
-        .single();
+        .single()
 
       if (error) {
-        console.error("Error:", error.message);
+        console.error("Error:", error.message)
+        toast.error("Error al cargar el producto")
       } else {
-        setProduct(data);
+        setProduct(data)
       }
-    };
+    }
 
-    fetchProduct();
-  }, [id, supabase]);
+    fetchProduct()
+  })
 
   const handleEdit = (field) => {
-    setEditingField(field);
-    setUpdatedValue(product[field]);
-  };
+    setEditingField(field)
+    setUpdatedValue(product[field])
+  }
 
   const handleUpdate = async (field) => {
-    setIsLoading(true);
+    setIsLoading(true)
     try {
       const { error } = await supabase
         .from("products")
         .update({ [field]: updatedValue })
-        .eq("id", id);
+        .eq("id", id)
 
-      if (error) throw error;
+      if (error) throw error
 
       const { data, error: fetchError } = await supabase
         .from("products")
         .select("*")
         .eq("id", id)
-        .single();
+        .single()
 
       if (fetchError) {
-        console.error("Error:", fetchError.message);
+        console.error("Error:", fetchError.message)
+        toast.error("Error al actualizar el producto")
       } else {
-        setProduct(data);
-        setEditingField(null);
-        setUpdatedValue("");
+        setProduct(data)
+        setEditingField(null)
+        setUpdatedValue("")
+        toast.success("Producto actualizado exitosamente")
       }
     } catch (error) {
-      console.error("Error updating:", error.message);
+      console.error("Error updating:", error.message)
+      toast.error("Error al actualizar el producto")
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
 
-  if (!product)
+  if (!product) {
     return (
-      <div
-        role="status"
-        className="flex items-center justify-center min-h-screen"
-      >
-        <LoaderCircle className="w-8 h-8 text-green-600 animate-spin" />
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-r from-slate-900 to-slate-700">
+        <Loader2 className="w-8 h-8 text-green-500 animate-spin" />
       </div>
-    );
+    )
+  }
 
   return (
-    <section className="bg-gradient-to-r from-slate-900 to-slate-700 min-h-screen flex items-center justify-center">
-      <div className="flex flex-col items-center justify-center px-6 py-8 mx-auto md:h-full lg:py-0">
-        <a
-          href="/dashboard"
-          className="flex items-center mb-6 text-2xl font-semibold text-green-500"
-        >
-          <Utensils />
-          ReMenu
-        </a>
-        <div className="max-w-4xl w-full px-4 py-6 bg-gradient-to-r from-slate-900 to-slate-700 rounded-lg border border-gray-700 shadow-lg">
-          <dl className="-my-3 divide-y divide-gray-700 text-sm">
+    <section className="bg-gradient-to-r from-slate-900 to-slate-700 min-h-screen flex items-center justify-center py-12 px-4">
+      <Card className="w-full max-w-2xl bg-slate-800 border-gray-700 shadow-2xl animate-fade-in-up">
+        <CardHeader>
+          <CardTitle className="text-2xl font-bold text-center flex items-center justify-center text-white">
+            <Utensils className="mr-2 h-6 w-6 text-green-500" />
+            Detalles del Producto
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <dl className="space-y-4">
             {[
               { label: "Nombre", field: "name" },
               { label: "Descripción", field: "description" },
               { label: "Categoría", field: "category" },
               { label: "Precio", field: "price" },
             ].map(({ label, field }) => (
-              <div
-                key={field}
-                className="grid grid-cols-1 gap-1 p-3 sm:grid-cols-3 sm:gap-4"
-              >
-                <dt className="font-medium text-white">{label}</dt>
-                <dd className="text-gray-200 sm:col-span-2">
+              <div key={field} className="flex flex-col space-y-1">
+                <dt className="text-sm font-medium text-gray-400">{label}</dt>
+                <dd className="text-lg text-white">
                   {editingField === field ? (
                     <div className="flex items-center gap-2">
-                      <input
+                      <Input
                         type={field === "price" ? "number" : "text"}
                         value={updatedValue}
                         onChange={(e) => setUpdatedValue(e.target.value)}
-                        className="border rounded-lg p-2 bg-gray-900 text-white"
+                        className="flex-grow bg-slate-700 border-gray-600 text-white"
                       />
-                      <button
-                        className="bg-green-600 hover:bg-green-700 text-white rounded-lg px-4 py-2"
+                      <Button
                         onClick={() => handleUpdate(field)}
                         disabled={isLoading}
+                        className="bg-green-500 hover:bg-green-600"
                       >
                         {isLoading ? (
-                          <LoaderCircle className="w-5 h-5 animate-spin" />
+                          <Loader2 className="w-4 h-4 animate-spin" />
                         ) : (
-                          "Guardar"
+                          <Save className="w-4 h-4" />
                         )}
-                      </button>
+                      </Button>
                     </div>
                   ) : (
-                    <div className="flex items-center gap-2">
-                      {product[field]}
-                      <button
-                        className="bg-green-600 hover:bg-green-700 text-white rounded-lg px-4 py-2"
+                    <div className="flex items-center justify-between">
+                      <span>{product[field]}</span>
+                      <Button
                         onClick={() => handleEdit(field)}
+                        variant="ghost"
+                        className="text-green-400 hover:text-green-300"
                       >
-                        Editar
-                      </button>
+                        <Edit2 className="w-4 h-4" />
+                      </Button>
                     </div>
                   )}
                 </dd>
               </div>
             ))}
           </dl>
-          <div className="mt-6 text-center">
+          <div className="mt-8 flex justify-center">
             <Link href="/dashboard">
-              <Button>Volver al Dashboard</Button>
+              <Button className="bg-slate-700 hover:bg-slate-600 text-white">
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Volver al Dashboard
+              </Button>
             </Link>
           </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
+      <ToastContainer position="bottom-right" theme="dark" />
     </section>
-  );
+  )
 }

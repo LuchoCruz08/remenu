@@ -1,9 +1,16 @@
 "use client";
 
-import { createClient } from "@/utils/supabase/client";
-import { LoaderCircle, Utensils } from "lucide-react";
-import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { createClient } from "@/utils/supabase/client";
+import { Utensils, Loader2, PlusCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 export default function Create() {
   const supabase = createClient();
@@ -17,6 +24,7 @@ export default function Create() {
   });
 
   const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -37,128 +45,125 @@ export default function Create() {
   };
 
   const handleCreate = async () => {
+    setSubmitting(true);
     try {
+      if (!product.name) {
+        toast.error("El nombre del producto es obligatorio");
+        setSubmitting(false);
+        return;
+      }
+
       const productWithDefaultPrice = {
         ...product,
         price: product.price ? parseFloat(product.price) : 0,
       };
 
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from("products")
         .insert([productWithDefaultPrice]);
       if (error) throw error;
 
-      router.push("/dashboard");
+      toast.success("Producto agregado exitosamente");
+      setTimeout(() => router.push("/dashboard"), 2000);
     } catch (error) {
       console.log(error.message);
+      toast.error("Error al agregar el producto");
+    } finally {
+      setSubmitting(false);
     }
   };
 
-  if (loading)
+  if (loading) {
     return (
-      <div
-        role="status"
-        className="flex items-center justify-center min-h-screen"
-      >
-        <LoaderCircle className="w-8 h-8 text-greem-600 animate-spin" />
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-r from-slate-900 to-slate-700">
+        <Loader2 className="w-8 h-8 text-green-500 animate-spin" />
       </div>
     );
+  }
 
   return (
-    <section className="bg-gradient-to-r from-slate-900 to-slate-700 min-h-screen flex flex-col justify-center">
-      <div className="flex flex-col items-center justify-center px-6 py-8 mx-auto md:h-full lg:py-0">
-        <a
-          href="/dashboard"
-          className="flex items-center mb-6 text-2xl font-semibold text-green-500"
-        >
-          <Utensils />
-          ReMenu
-        </a>
-        <div className="w-full rounded-lg shadow border md:mt-0 sm:max-w-md xl:p-0 bg-gradient-to-r from-slate-900 to-slate-700 border-gray-700">
-          <div className="p-6 space-y-4 md:space-y-6 sm:p-8">
-            <h1 className="text-xl font-bold leading-tight tracking-tight md:text-2xl text-white">
-              Agrega un nuevo producto
-            </h1>
-            <form className="space-y-4 md:space-y-6">
-              <div>
-                <label
-                  htmlFor="text"
-                  className="block mb-2 text-sm font-medium text-white"
-                >
-                  <strong>Nombre del producto (OBLIGATORIO):</strong>
-                </label>
-                <input
-                  type="text"
-                  name="name"
-                  id="name"
-                  value={product.name}
-                  onChange={onChange}
-                  className="border rounded-lg block w-full p-2.5 bg-gray-700 border-gray-600 placeholder-gray-400 text-white focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="Pizza Especial, Hamburguesa Completa, etc."
-                  required
-                />
-              </div>
-              <div>
-                <label
-                  htmlFor="text"
-                  className="block mb-2 text-sm font-medium text-white"
-                >
-                  Descripción del producto:
-                </label>
-                <input
-                  type="text"
-                  name="description"
-                  id="description"
-                  value={product.description}
-                  onChange={onChange}
-                  className="border rounded-lg block w-full p-2.5 bg-gray-700 border-gray-600 placeholder-gray-400 text-white focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="Ingredientes, porciones,etc."
-                />
-              </div>
-              <div>
-                <label
-                  htmlFor="text"
-                  className="block mb-2 text-sm font-medium text-white"
-                >
-                  Categoría del producto:
-                </label>
-                <input
-                  type="text"
-                  name="category"
-                  id="category"
-                  value={product.category}
-                  onChange={onChange}
-                  className="border rounded-lg block w-full p-2.5 bg-gray-700 border-gray-600 placeholder-gray-400 text-white focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="Pizzas, Lomos, Bebidas, etc."
-                />
-              </div>
-              <div>
-                <label
-                  htmlFor="text"
-                  className="block mb-2 text-sm font-medium text-white"
-                >
-                  Precio del producto:
-                </label>
-                <input
-                  type="number"
-                  name="price"
-                  id="price"
-                  value={product.price}
-                  onChange={onChange}
-                  className="border rounded-lg block w-full p-2.5 bg-gray-700 border-gray-600 placeholder-gray-400 text-white focus:ring-blue-500 focus:border-blue-500"
-                />
-              </div>
-              <button
-                className="bg-green-600 hover:bg-opacity-80 text-white rounded-lg px-4 py-2 duration-200 w-full"
-                type="button"
-                onClick={handleCreate}
-              >
-                Agregar Producto
-              </button>
-            </form>
-          </div>
-        </div>
-      </div>
+    <section className="bg-gradient-to-r from-slate-900 to-slate-700 min-h-screen flex items-center justify-center py-12 px-4">
+      <Card className="w-full max-w-md bg-slate-800 border-gray-700 shadow-2xl animate-fade-in-up">
+        <CardHeader>
+          <CardTitle className="text-2xl font-bold text-center flex items-center justify-center text-white">
+            <Utensils className="mr-2 h-6 w-6 text-green-500" />
+            Agregar Nuevo Producto
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
+            <div className="space-y-2">
+              <Label htmlFor="name" className="text-white">
+                Nombre del producto (OBLIGATORIO)
+              </Label>
+              <Input
+                type="text"
+                id="name"
+                name="name"
+                value={product.name}
+                onChange={onChange}
+                placeholder="Pizza Especial, Hamburguesa Completa, etc."
+                className="bg-slate-700 border-gray-600 text-white"
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="description" className="text-white">
+                Descripción del producto
+              </Label>
+              <Textarea
+                id="description"
+                name="description"
+                value={product.description}
+                onChange={onChange}
+                placeholder="Ingredientes, porciones, etc."
+                className="bg-slate-700 border-gray-600 text-white"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="category" className="text-white">
+                Categoría del producto
+              </Label>
+              <Input
+                type="text"
+                id="category"
+                name="category"
+                value={product.category}
+                onChange={onChange}
+                placeholder="Pizzas, Lomos, Bebidas, etc."
+                className="bg-slate-700 border-gray-600 text-white"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="price" className="text-white">
+                Precio del producto
+              </Label>
+              <Input
+                type="number"
+                id="price"
+                name="price"
+                value={product.price}
+                onChange={onChange}
+                placeholder="0.00"
+                className="bg-slate-700 border-gray-600 text-white"
+              />
+            </div>
+            <Button
+              className="w-full bg-green-500 hover:bg-green-600 text-white"
+              onClick={handleCreate}
+              disabled={submitting}
+            >
+              {submitting ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <PlusCircle className="mr-2 h-4 w-4" />
+              )}
+              {submitting ? "Agregando..." : "Agregar Producto"}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+      <ToastContainer position="bottom-right" theme="dark" />
     </section>
   );
 }
